@@ -1,0 +1,189 @@
+-- Obfuscated Music Panel Script by ChatGPT for Felipe
+
+local a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
+a=game:GetService("Players")
+b=game:GetService("Debris")
+c=a.LocalPlayer:WaitForChild("PlayerGui")
+d="rbxassetid://124288667234232"
+e=Color3.fromRGB(60,60,60)
+f="3625290171"
+g="2865228021"
+
+local function h(I)
+ for J,K in ipairs({game:GetService("ReplicatedStorage"),game:GetService("Workspace")})do
+  for L,M in ipairs(K:GetDescendants())do
+   if M:IsA("RemoteEvent")and M.Name==I then
+    return M
+   end
+  end
+ end
+ return nil
+end
+
+local function n(O,P,Q,R)
+ if R and tonumber(R)then
+  pcall(function()
+   local S=Instance.new("Sound")
+   S.Name="NotificationSound"
+   S.SoundId="rbxassetid://"..R
+   S.Volume=0.7
+   S.Parent=c
+   S:Play()
+   b:AddItem(S,S.TimeLength+1)
+  end)
+ end
+ pcall(function()
+  game:GetService("StarterGui"):SetCore("SendNotification",{Title=O,Text=P,Duration=Q or 5})
+ end)
+end
+
+local function t()
+ local U="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+ local V=""
+ for W=1,10 do
+  local X=math.random(1,#U)
+  V=V..U:sub(X,X)
+ end
+ return V
+end
+
+local Y=nil
+
+local function Z(aa,ab,ac)
+ local ad=h("AC6_FE_Sounds")
+ if ad then
+  if Y then
+   ad:FireServer("stopSound",Y)
+   Y=nil
+  end
+  local ae="rbxassetid://"..aa
+  local af=t()
+  Y=af
+  ad:FireServer("newSound",af,workspace,ae,ac,ab,true)
+  ad:FireServer("playSound",af)
+ else
+  warn("AC6_FE_Sounds RemoteEvent not found.")
+ end
+end
+
+local function ag()
+ local ah=h("AC6_FE_Sounds")
+ if ah and Y then
+  ah:FireServer("stopSound",Y)
+  Y=nil
+ end
+end
+
+if not h("AC6_FE_Sounds") then
+ n("Music Panel","This game is not compatible.",5,g)
+ return
+end
+
+n("Music Panel","Game compatible! By katsughz",5,f)
+
+local ai=Instance.new("ScreenGui",c)
+ai.Name="MusicPanelGui"
+ai.ResetOnSpawn=false
+ai.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+
+local aj=Instance.new("Frame",ai)
+aj.Name="MainFrame"
+aj.Size=UDim2.new(0,280,0,230)
+aj.Position=UDim2.new(0.5,-140,0.5,-115)
+aj.BackgroundColor3=Color3.fromRGB(18,18,18)
+aj.Active=true
+aj.Draggable=true
+Instance.new("UICorner",aj).CornerRadius=UDim.new(0,12)
+Instance.new("UIStroke",aj).Color=Color3.fromRGB(200,200,200)
+
+local ak=Instance.new("ImageLabel",aj)
+ak.Name="Background"
+ak.Size=UDim2.new(1,0,1,0)
+ak.Image=d
+ak.ScaleType=Enum.ScaleType.Crop
+ak.Transparency=0.6
+ak.ZIndex=1
+
+local function al(am,an)
+ local ao=Instance.new(am)
+ ao.ZIndex=2
+ for ap,aq in pairs(an)do
+  ao[ap]=aq
+ end
+ Instance.new("UICorner",ao).CornerRadius=UDim.new(0,8)
+ Instance.new("UIStroke",ao).Color=Color3.fromRGB(220,220,220)
+ return ao
+end
+
+local ar=al("TextLabel",{
+ Parent=aj,Name="Title",Size=UDim2.new(1,0,0,35),
+ BackgroundColor3=Color3.fromRGB(25,25,25),
+ Text="👑 MUSIC PANEL",
+ TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.GothamBold,TextSize=18
+})
+ar.UIStroke.Enabled=false
+
+al("TextLabel",{
+ Parent=aj,Name="LabelID",Size=UDim2.new(0.9,0,0,15),
+ Position=UDim2.new(0.05,0,0.18,0),BackgroundTransparency=1,
+ Text="MUSIC ID",TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
+}).UIStroke.Enabled=false
+
+local as=al("TextBox",{
+ Parent=aj,Name="MusicID",PlaceholderText="Paste ID here...",Text="",
+ Size=UDim2.new(0.9,0,0,28),Position=UDim2.new(0.05,0,0.25,0),
+ BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=14,ClearTextOnFocus=false
+})
+
+al("TextLabel",{
+ Parent=aj,Name="LabelVolume",Size=UDim2.new(0.42,0,0,15),
+ Position=UDim2.new(0.05,0,0.42,0),BackgroundTransparency=1,
+ Text="VOLUME",TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
+}).UIStroke.Enabled=false
+
+local at=al("TextBox",{
+ Parent=aj,Name="Volume",PlaceholderText="0-1",Text="1",
+ Size=UDim2.new(0.42,0,0,28),Position=UDim2.new(0.05,0,0.49,0),
+ BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=14
+})
+
+al("TextLabel",{
+ Parent=aj,Name="LabelPitch",Size=UDim2.new(0.43,0,0,15),
+ Position=UDim2.new(0.52,0,0.42,0),BackgroundTransparency=1,
+ Text="PITCH",TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
+}).UIStroke.Enabled=false
+
+local au=al("TextBox",{
+ Parent=aj,Name="Pitch",PlaceholderText="0-2",Text="1",
+ Size=UDim2.new(0.43,0,0,28),Position=UDim2.new(0.52,0,0.49,0),
+ BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
+ Font=Enum.Font.Gotham,TextSize=14
+})
+
+local av=al("TextButton",{
+ Parent=aj,Name="PlayButton",Text="▶ PLAY",
+ Size=UDim2.new(0.9,0,0,32),Position=UDim2.new(0.05,0,0.65,0),
+ BackgroundColor3=e,TextColor3=Color3.new(1,1,1),
+ Font=Enum.Font.GothamBold,TextSize=15
+})
+
+local aw=al("TextButton",{
+ Parent=aj,Name="StopButton",Text="⏹ STOP",
+ Size=UDim2.new(0.9,0,0,26),Position=UDim2.new(0.05,0,0.82,0),
+ BackgroundColor3=e,TextColor3=Color3.new(1,1,1),
+ Font=Enum.Font.GothamBold,TextSize=13
+})
+
+av.MouseButton1Click:Connect(function()
+ Z(as.Text,tonumber(at.Text)or 1,tonumber(au.Text)or 1)
+end)
+
+aw.MouseButton1Click:Connect(function()
+ ag()
+end)
