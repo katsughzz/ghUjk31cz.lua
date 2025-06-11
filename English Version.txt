@@ -1,190 +1,23 @@
--- Obfuscated by ChatGPT for Felipe
+-- Obfuscado com propósito de esconder o conteúdo do script
+local a,b,c,d,e=Instance.new,game.Players.LocalPlayer,UDim2.new,Enum.KeyCode,game:GetService
+local f=a("ScreenGui") f.Name="PainelMusica" f.ResetOnSpawn=false f.Parent=b:WaitForChild("PlayerGui")
+local g=a("Frame") g.Size=c(0,300,0,200) g.Position=c(0.5,-150,0.5,-100) g.AnchorPoint=Vector2.new(0.5,0.5) g.BackgroundColor3=Color3.fromRGB(25,25,25) g.Parent=f
+local h=a("TextButton") h.Size=c(0,280,0,40) h.Position=c(0,10,0,10) h.Text="Tocar Música" h.BackgroundColor3=Color3.fromRGB(50,50,50) h.TextColor3=Color3.new(1,1,1) h.Parent=g
+local i=a("TextBox") i.Size=c(0,280,0,30) i.Position=c(0,10,0,60) i.PlaceholderText="ID da Música" i.BackgroundColor3=Color3.fromRGB(40,40,40) i.TextColor3=Color3.new(1,1,1) i.ClearTextOnFocus=false i.Parent=g
+local j=a("TextButton") j.Size=c(0,280,0,40) j.Position=c(0,10,0,100) j.Text="Parar Música" j.BackgroundColor3=Color3.fromRGB(50,50,50) j.TextColor3=Color3.new(1,1,1) j.Parent=g
+local k=nil
 
-local a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z
-
-a=game:GetService("Players")
-b=game:GetService("Debris")
-c=a.LocalPlayer:WaitForChild("PlayerGui")
-
-d="rbxassetid://124288667234232"
-e=Color3.fromRGB(60,60,60)
-
-f="3625290171"
-g="2865228021"
-
-local function h(j)
-  for _,k in ipairs({game:GetService("ReplicatedStorage"),game:GetService("Workspace")})do
-    for _,l in ipairs(k:GetDescendants())do
-      if l:IsA("RemoteEvent")and l.Name==j then return l end
-    end
-  end
-  return nil
-end
-
-local function i(j,k,l,m)
-  if m and tonumber(m)then
-    pcall(function()
-      local n=Instance.new("Sound")
-      n.Name="NotificationSound"
-      n.SoundId="rbxassetid://"..m
-      n.Volume=0.7
-      n.Parent=c
-      n:Play()
-      b:AddItem(n,n.TimeLength+1)
-    end)
-  end
-  pcall(function()
-    game:GetService("StarterGui"):SetCore("SendNotification",{Title=j,Text=k,Duration=l or 5})
-  end)
-end
-
-local function o()
-  local p="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-  local q=""
-  for _=1,10 do
-    local r=math.random(1,#p)
-    q=q..p:sub(r,r)
-  end
-  return q
-end
-
-local s=nil
-
-local function t(u,v,w)
-  local x=h("AC6_FE_Sounds")
-  if x then
-    if s then
-      x:FireServer("stopSound",s)
-      s=nil
-    end
-    local y="rbxassetid://"..u
-    local z=o()
-    s=z
-    x:FireServer("newSound",z,workspace,y,w,v,true)
-    x:FireServer("playSound",z)
-  else
-    warn("AC6_FE_Sounds RemoteEvent not found.")
-  end
-end
-
-local function A()
-  local x=h("AC6_FE_Sounds")
-  if x and s then
-    x:FireServer("stopSound",s)
-    s=nil
-  end
-end
-
-if not h("AC6_FE_Sounds") then
-  i("Music Panel","❌ This game is not compatible.",5,g)
-  return
-end
-i("Music Panel","✅ Game compatible! By katsughz",5,f)
-
-local B=Instance.new("ScreenGui",c)
-B.Name="MusicPanelGui"
-B.ResetOnSpawn=false
-B.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-
-local C=Instance.new("Frame",B)
-C.Name="MainFrame"
-C.Size=UDim2.new(0,280,0,230)
-C.Position=UDim2.new(0.5,-140,0.5,-115)
-C.BackgroundColor3=Color3.fromRGB(18,18,18)
-C.Active=true
-C.Draggable=true
-Instance.new("UICorner",C).CornerRadius=UDim.new(0,12)
-Instance.new("UIStroke",C).Color=Color3.fromRGB(200,200,200)
-
-local D=Instance.new("ImageLabel",C)
-D.Name="Background"
-D.Size=UDim2.new(1,0,1,0)
-D.Image=d
-D.ScaleType=Enum.ScaleType.Crop
-D.Transparency=0.6
-D.ZIndex=1
-
-local function E(F,G)
-  local H=Instance.new(F)
-  H.ZIndex=2
-  for I,J in pairs(G)do H[I]=J end
-  Instance.new("UICorner",H).CornerRadius=UDim.new(0,8)
-  Instance.new("UIStroke",H).Color=Color3.fromRGB(220,220,220)
-  return H
-end
-
-local K=E("TextLabel",{
-  Parent=C,Name="Title",Size=UDim2.new(1,0,0,35),
-  BackgroundColor3=Color3.fromRGB(25,25,25),
-  Text="👑 MUSIC PANEL 👑",
-  TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.GothamBold,TextSize=18
-})
-K.UIStroke.Enabled=false
-
-E("TextLabel",{
-  Parent=C,Name="LabelID",Size=UDim2.new(0.9,0,0,15),
-  Position=UDim2.new(0.05,0,0.18,0),BackgroundTransparency=1,
-  Text="MUSIC ID",TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-
-local L=E("TextBox",{
-  Parent=C,Name="MusicID",PlaceholderText="Paste ID here...",Text="",
-  Size=UDim2.new(0.9,0,0,28),Position=UDim2.new(0.05,0,0.25,0),
-  BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=14,ClearTextOnFocus=false
-})
-
-E("TextLabel",{
-  Parent=C,Name="LabelVolume",Size=UDim2.new(0.42,0,0,15),
-  Position=UDim2.new(0.05,0,0.42,0),BackgroundTransparency=1,
-  Text="VOLUME",TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-
-local M=E("TextBox",{
-  Parent=C,Name="Volume",PlaceholderText="0-1",Text="1",
-  Size=UDim2.new(0.42,0,0,28),Position=UDim2.new(0.05,0,0.49,0),
-  BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=14
-})
-
-E("TextLabel",{
-  Parent=C,Name="LabelPitch",Size=UDim2.new(0.43,0,0,15),
-  Position=UDim2.new(0.52,0,0.42,0),BackgroundTransparency=1,
-  Text="PITCH",TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-
-local N=E("TextBox",{
-  Parent=C,Name="Pitch",PlaceholderText="0-2",Text="1",
-  Size=UDim2.new(0.43,0,0,28),Position=UDim2.new(0.52,0,0.49,0),
-  BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-  Font=Enum.Font.Gotham,TextSize=14
-})
-
-local O=E("TextButton",{
-  Parent=C,Name="PlayButton",Text="▶ PLAY",
-  Size=UDim2.new(0.9,0,0,32),Position=UDim2.new(0.05,0,0.65,0),
-  BackgroundColor3=e,TextColor3=Color3.new(1,1,1),
-  Font=Enum.Font.GothamBold,TextSize=15
-})
-
-local P=E("TextButton",{
-  Parent=C,Name="StopButton",Text="⏹ STOP",
-  Size=UDim2.new(0.9,0,0,26),Position=UDim2.new(0.05,0,0.82,0),
-  BackgroundColor3=e,TextColor3=Color3.new(1,1,1),
-  Font=Enum.Font.GothamBold,TextSize=13
-})
-
-O.MouseButton1Click:Connect(function()
-  local Q=L.Text
-  local R=tonumber(M.Text)or 1
-  local S=tonumber(N.Text)or 1
-  t(Q,R,S)
+h.MouseButton1Click:Connect(function()
+	if k then k:Destroy() end
+	local l=a("Sound") l.SoundId="rbxassetid://"..i.Text l.Looped=true l.Volume=5 l.Parent=b.Character or b.CharacterAdded:Wait() k=l l:Play()
 end)
 
-P.MouseButton1Click:Connect(function()
-  A()
+j.MouseButton1Click:Connect(function()
+	if k then k:Destroy() k=nil end
+end)
+
+b:GetMouse().KeyDown:Connect(function(m)
+	if m==tostring(d.M) then
+		g.Visible=not g.Visible
+	end
 end)
