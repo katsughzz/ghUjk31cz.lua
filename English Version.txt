@@ -1,169 +1,311 @@
 --[[
     👑 MUSIC PANEL 👑
-    Obfuscado por ChatGPT para Felipe
+    Original Author: katsughz
+    Final Version (Notification bugs fixed)
 ]]
 
-local a,b,c,d=game:GetService("Players"),game:GetService("Debris"),game:GetService("MarketplaceService"),game:GetService("ReplicatedStorage")
-local e=a.LocalPlayer:WaitForChild("PlayerGui")
-local f="rbxassetid://124288667234232"
-local g=Color3.fromRGB(60,60,60)
-local h="3625290171"
-local i="2865228021"
-local function j(k)
-    for _,l in ipairs({d,game:GetService("Workspace")})do
-        for _,m in ipairs(l:GetDescendants())do
-            if m:IsA("RemoteEvent")and m.Name==k then return m end
+--================================================================================--
+-- SERVICES AND CONFIGURATION
+--================================================================================--
+local Players = game:GetService("Players")
+local Debris = game:GetService("Debris")
+local MarketplaceService = game:GetService("MarketplaceService")
+local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local BACKGROUND_IMAGE_ID = "rbxassetid://124288667234232"
+local BUTTON_COLOR = Color3.fromRGB(60, 60, 60)
+
+-- ================================================================================--
+-- SOUND IDs
+-- ================================================================================--
+local SOUND_ID_SUCCESS = "3625290171"
+local SOUND_ID_ERROR   = "2865228021"
+-- ================================================================================--
+
+
+--================================================================================--
+-- HELPER AND MAIN FUNCTIONS
+--================================================================================--
+local function findRemoteEvent(name)
+    for _, service in ipairs({game:GetService("ReplicatedStorage"), game:GetService("Workspace")}) do
+        for _, obj in ipairs(service:GetDescendants()) do
+            if obj:IsA("RemoteEvent") and obj.Name == name then
+                return obj
+            end
         end
     end
     return nil
 end
-local function n(o,p,q,r)
-    if r and tonumber(r)then
+
+local function sendNotification(title, text, duration, soundId)
+    if soundId and tonumber(soundId) then
         pcall(function()
-            local s=Instance.new("Sound")
-            s.Name="NotificationSound"
-            s.SoundId="rbxassetid://"..r
-            s.Volume=0.7
-            s.Parent=e
-            s:Play()
-            b:AddItem(s,s.TimeLength+1)
+            local sound = Instance.new("Sound")
+            sound.Name = "NotificationSound"
+            sound.SoundId = "rbxassetid://" .. soundId
+            sound.Volume = 0.7
+            sound.Parent = PlayerGui
+            
+            sound:Play()
+            Debris:AddItem(sound, sound.TimeLength + 1)
         end)
     end
+    
     pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification",{Title=o,Text=p,Duration=q or 5})
+        game:GetService("StarterGui"):SetCore("SendNotification", { Title = title, Text = text, Duration = duration or 5 })
     end)
 end
-local function t()
-    local u="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local v=""
-    for w=1,10 do
-        local x=math.random(1,#u)
-        v=v..u:sub(x,x)
+
+local function generateRandomName()
+    local chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local name = ""
+    for i = 1, 10 do
+        local rand = math.random(1, #chars)
+        name = name .. chars:sub(rand, rand)
     end
-    return v
+    return name
 end
-local y=nil
-local function z(A,B,C)
-    local D=j("AC6_FE_Sounds")
-    if D then
-        if y then D:FireServer("stopSound",y) y=nil end
-        local E="rbxassetid://"..A
-        local F=t()
-        y=F
-        D:FireServer("newSound",F,workspace,E,C,B,true)
-        D:FireServer("playSound",F)
+
+local currentSoundName = nil
+
+local function playMusic(musicId, volume, pitch)
+    local remote = findRemoteEvent("AC6_FE_Sounds")
+    if remote then
+        if currentSoundName then
+            remote:FireServer("stopSound", currentSoundName)
+            currentSoundName = nil
+        end
+
+        local assetId = "rbxassetid://" .. musicId
+        local soundName = generateRandomName()
+        currentSoundName = soundName
+
+        remote:FireServer("newSound", soundName, workspace, assetId, pitch, volume, true)
+        remote:FireServer("playSound", soundName)
     else
         warn("AC6_FE_Sounds RemoteEvent not found.")
     end
 end
-local function G()
-    local D=j("AC6_FE_Sounds")
-    if D and y then
-        D:FireServer("stopSound",y)
-        y=nil
+
+local function stopAllMusic()
+    local remote = findRemoteEvent("AC6_FE_Sounds")
+    if remote and currentSoundName then
+        remote:FireServer("stopSound", currentSoundName)
+        currentSoundName = nil
     end
 end
-if not j("AC6_FE_Sounds") then
-    n("Music Panel","❌ This game is not compatible.",5,i)
+
+--================================================================================--
+-- INITIAL CHECK
+--================================================================================--
+
+if not findRemoteEvent("AC6_FE_Sounds") then
+    sendNotification("Music Panel", "❌ This game is not compatible.", 5, SOUND_ID_ERROR)
     return
 end
-n("Music Panel","✅ Game compatible! By katsughz",5,h)
-local H=Instance.new("ScreenGui",e)
-H.Name="MusicPanelGui"
-H.ResetOnSpawn=false
-H.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-local function I(J,K)
-    local L=Instance.new(J)
-    for M,N in pairs(K)do
-        L[M]=N
-    end
-    return L
+
+sendNotification("Music Panel", "✅ Game compatible! By katsughz", 5, SOUND_ID_SUCCESS)
+
+--================================================================================--
+-- GRAPHICAL USER INTERFACE (GUI) CREATION
+--================================================================================--
+
+local gui = Instance.new("ScreenGui", PlayerGui)
+gui.Name = "MusicPanelGui"
+gui.ResetOnSpawn = false
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local function create(instanceType, props)
+    local obj = Instance.new(instanceType)
+    for p, v in pairs(props) do obj[p] = v end
+    return obj
 end
-local O=I("Frame",{
-    Parent=H,Name="MainFrame",Size=UDim2.new(0,280,0,230),Position=UDim2.new(0.5,-140,0.5,-115),
-    BackgroundColor3=Color3.fromRGB(18,18,18),Active=true,Draggable=true,Visible=false
+
+local frame = create("Frame", {
+    Parent = gui, Name = "MainFrame", Size = UDim2.new(0, 280, 0, 230), Position = UDim2.new(0.5, -140, 0.5, -115),
+    BackgroundColor3 = Color3.fromRGB(18, 18, 18), Active = true, Draggable = true, Visible = false
 })
-I("UICorner",{Parent=O,CornerRadius=UDim.new(0,12)})
-I("UIStroke",{Parent=O,Color=Color3.fromRGB(200,200,200)})
-local P=I("ImageLabel",{
-    Parent=O,Name="Background",Size=UDim2.new(1,0,1,0),Image=f,
-    ScaleType=Enum.ScaleType.Crop,Transparency=0.6,ZIndex=1
-})
-local function Q(R,S)
-    local T=I(R,S)
-    T.ZIndex=2
-    I("UICorner",{Parent=T,CornerRadius=UDim.new(0,8)})
-    I("UIStroke",{Parent=T,Color=Color3.fromRGB(220,220,220)})
-    return T
-end
-local U=Q("TextLabel",{
-    Parent=O,Name="Title",Size=UDim2.new(1,0,0,35),
-    BackgroundColor3=Color3.fromRGB(25,25,25),
-    Text="👑 MUSIC PANEL 👑",
-    TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.GothamBold,TextSize=18
-})
-U.UIStroke.Enabled=false
-local V=Q("TextButton",{
-    Parent=O,Name="HelpButton",Text="?",Size=UDim2.new(0,22,0,22),
-    Position=UDim2.new(1,-10,0,6.5),AnchorPoint=Vector2.new(1,0),
-    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
-    Font=Enum.Font.GothamBold,TextSize=16,ZIndex=3
-})
-Q("TextLabel",{
-    Parent=O,Name="LabelID",Size=UDim2.new(0.9,0,0,15),
-    Position=UDim2.new(0.05,0,0.18,0),BackgroundTransparency=1,
-    Text="MUSIC ID",TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-local W=Q("TextBox",{
-    Parent=O,Name="MusicID",PlaceholderText="Paste the ID here...",Text="",
-    Size=UDim2.new(0.9,0,0,28),Position=UDim2.new(0.05,0,0.25,0),
-    BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=14,ClearTextOnFocus=false
-})
-Q("TextLabel",{
-    Parent=O,Name="LabelVolume",Size=UDim2.new(0.42,0,0,15),
-    Position=UDim2.new(0.05,0,0.42,0),BackgroundTransparency=1,
-    Text="VOLUME",TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-local X=Q("TextBox",{
-    Parent=O,Name="Volume",PlaceholderText="...",Text="",
-    Size=UDim2.new(0.42,0,0,28),Position=UDim2.new(0.05,0,0.49,0),
-    BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=14
-})
-Q("TextLabel",{
-    Parent=O,Name="LabelPitch",Size=UDim2.new(0.43,0,0,15),
-    Position=UDim2.new(0.52,0,0.42,0),BackgroundTransparency=1,
-    Text="PITCH",TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
-}).UIStroke.Enabled=false
-local Y=Q("TextBox",{
-    Parent=O,Name="Pitch",PlaceholderText="...",Text="1",
-    Size=UDim2.new(0.43,0,0,28),Position=UDim2.new(0.52,0,0.49,0),
-    BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
-    Font=Enum.Font.Gotham,TextSize=14
-})
-local Z=Q("TextButton",{
-    Parent=O,Name="PlayButton",Text="▶ PLAY",
-    Size=UDim2.new(0.9,0,0,32),Position=UDim2.new(0.05,0,0.65,0),
-    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
-    Font=Enum.Font.GothamBold,TextSize=15
-})
-local aa=Q("TextButton",{
-    Parent=O,Name="StopButton",Text="⏹ STOP",
-    Size=UDim2.new(0.9,0,0,26),Position=UDim2.new(0.05,0,0.82,0),
-    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
-    Font=Enum.Font.GothamBold,TextSize=13
+create("UICorner", { Parent = frame, CornerRadius = UDim.new(0, 12) })
+create("UIStroke", { Parent = frame, Color = Color3.fromRGB(200, 200, 200) })
+
+local backgroundImage = create("ImageLabel", {
+    Parent = frame, Name = "Background", Size = UDim2.new(1, 0, 1, 0), Image = BACKGROUND_IMAGE_ID,
+    ScaleType = Enum.ScaleType.Crop, Transparency = 0.6, ZIndex = 1
 })
 
-V.MouseButton1Click:Connect(function()
-    O.Visible = not O.Visible
+local function createStyled(instanceType, props)
+    local obj = create(instanceType, props)
+    obj.ZIndex = 2
+    create("UICorner", { Parent = obj, CornerRadius = UDim.new(0, 8) })
+    create("UIStroke", { Parent = obj, Color = Color3.fromRGB(220, 220, 220) })
+    return obj
+end
+
+local title = createStyled("TextLabel", {
+    Parent = frame, Name = "Title", Size = UDim2.new(1, 0, 0, 35),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 25),
+    Text = "👑 MUSIC PANEL 👑",
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.GothamBold, TextSize = 18
+})
+title.UIStroke.Enabled = false
+
+local helpButton = createStyled("TextButton", {
+    Parent = frame, Name = "HelpButton", Text = "?", Size = UDim2.new(0, 22, 0, 22),
+    Position = UDim2.new(1, -10, 0, 6.5), AnchorPoint = Vector2.new(1, 0),
+    BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold, TextSize = 16, ZIndex = 3
+})
+
+createStyled("TextLabel", {
+    Parent = frame, Name = "LabelID", Size = UDim2.new(0.9, 0, 0, 15),
+    Position = UDim2.new(0.05, 0, 0.18, 0), BackgroundTransparency = 1,
+    Text = "MUSIC ID", TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+}).UIStroke.Enabled = false
+
+local musicBox = createStyled("TextBox", {
+    Parent = frame, Name = "MusicID", PlaceholderText = "Paste the ID here...", Text = "",
+    Size = UDim2.new(0.9, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.25, 0),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 14, ClearTextOnFocus = false
+})
+
+createStyled("TextLabel", {
+    Parent = frame, Name = "LabelVolume", Size = UDim2.new(0.42, 0, 0, 15),
+    Position = UDim2.new(0.05, 0, 0.42, 0), BackgroundTransparency = 1,
+    Text = "VOLUME", TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+}).UIStroke.Enabled = false
+
+local volumeBox = createStyled("TextBox", {
+    Parent = frame, Name = "Volume", PlaceholderText = "...", Text = "",
+    Size = UDim2.new(0.42, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.49, 0),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 14
+})
+
+createStyled("TextLabel", {
+    Parent = frame, Name = "LabelPitch", Size = UDim2.new(0.43, 0, 0, 15),
+    Position = UDim2.new(0.52, 0, 0.42, 0), BackgroundTransparency = 1,
+    Text = "PITCH", TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left
+}).UIStroke.Enabled = false
+
+local pitchBox = createStyled("TextBox", {
+    Parent = frame, Name = "Pitch", PlaceholderText = "...", Text = "1",
+    Size = UDim2.new(0.43, 0, 0, 28), Position = UDim2.new(0.52, 0, 0.49, 0),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255),
+    Font = Enum.Font.Gotham, TextSize = 14
+})
+
+local playButton = createStyled("TextButton", {
+    Parent = frame, Name = "PlayButton", Text = "▶ PLAY",
+    Size = UDim2.new(0.9, 0, 0, 32), Position = UDim2.new(0.05, 0, 0.65, 0),
+    BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold, TextSize = 15
+})
+
+local stopButton = createStyled("TextButton", {
+    Parent = frame, Name = "StopButton", Text = "⏹ STOP",
+    Size = UDim2.new(0.9, 0, 0, 26), Position = UDim2.new(0.05, 0, 0.82, 0),
+    BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold, TextSize = 13
+})
+
+-- Help Panel
+local helpFrame = create("Frame", {
+    Parent = gui, Name = "HelpFrame", Size = UDim2.new(0, 340, 0.75, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 25), ZIndex = 10, Visible = false, Active = true, Draggable = true
+})
+create("UICorner", { Parent = helpFrame, CornerRadius = UDim.new(0, 12) })
+create("UIStroke", { Parent = helpFrame, Color = Color3.fromRGB(220, 220, 220) })
+local helpTitle = create("TextLabel", {
+    Parent = helpFrame, Name = "HelpTitle", Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Color3.fromRGB(40, 40, 40),
+    Text = "💡 Instructions", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 11
+})
+local scrollingContent = create("ScrollingFrame", {
+    Parent = helpFrame, Name = "ScrollingContent", Size = UDim2.new(1, 0, 1, -75), Position = UDim2.new(0, 0, 0, 35),
+    BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150), ScrollBarThickness = 6, ZIndex = 11
+})
+
+-- MODIFIED: Instruction text with the maximum volume corrected to 10
+local helpText = create("TextLabel", {
+    Parent = scrollingContent, Name = "HelpText", Size = UDim2.new(1, -10, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+    BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(240, 240, 240),
+    Text = "🎵 Script Description:\n\nThis script adds a simple and functional music panel to your game, allowing players to play music using a Roblox audio ID (AssetId). It is compatible with games that use the AC6_FE_Sounds system to play sounds.\n\n\n--- ✅ Compatibility: ---\n\nWorks best in car games.\n\nCompatible with games that have the \"AC6_FE_Sounds\" RemoteEvent inside ReplicatedStorage.\n\nThis event is common in games with custom sound systems from the AC6 community.\n\n\n--- ⚙️ How to use: ---\n\n1. Enter the Roblox music ID (AssetId).\n\n\n2. Adjust the following parameters:\n\n   Volume: from 0.1 to 10 (e.g., 1 = normal volume).\n\n   Pitch: from 0.5 to 2 (e.g., 1 = normal pitch, 1.2 = higher, 0.8 = lower).\n\n\n3. Press the \"Play\" button to start the music.\n\n\n4. Press \"Stop\" to stop the current music.\n\n\n--- 🔒 Security and Verification:\n\nThe script automatically checks if the game has the \"AC6_FE_Sounds\" event before activating the panel.\n\nEnsures that only one song plays at a time, preventing overlaps.\n\nShows notifications in case of an error or if the game is not compatible.",
+    TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 12
+})
+
+local closeHelpButton = createStyled("TextButton", {
+    Parent = helpFrame, Name = "CloseHelpButton", Text = "CLOSE", Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 1, -40),
+    BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 11
+})
+
+local toggleButton = createStyled("TextButton", {
+    Parent = gui, Name = "ToggleButton", Text = "🎵", Size = UDim2.new(0, 50, 0, 50),
+    Position = UDim2.new(1, -60, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5),
+    BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold, TextSize = 24, ZIndex = 5
+})
+
+--================================================================================--
+-- BUTTON LOGIC
+--================================================================================--
+
+-- MODIFIED: 'Play' button logic reworked to be 100% reliable and stable
+playButton.MouseButton1Click:Connect(function()
+    local musicId = musicBox.Text
+    local volume = tonumber(volumeBox.Text) or 1
+    local pitch = tonumber(pitchBox.Text) or 1
+    
+    local idAsNumber = tonumber(musicId)
+    if not idAsNumber then
+        sendNotification("Error", "❌ The entered ID is not a valid number.", 5, SOUND_ID_ERROR)
+        return
+    end
+
+    -- The check is done synchronously to ensure the notification always appears
+    local success, result = pcall(function()
+        return MarketplaceService:GetProductInfo(idAsNumber)
+    end)
+
+    if success and result then
+        -- Check 1: The ID exists, but has it been deleted?
+        if result.Name == "[ Content Deleted ]" then
+            sendNotification("Error", "❌ This audio has been deleted.", 5, SOUND_ID_ERROR)
+            return
+        end
+
+        -- Check 2: The ID exists, but is it an audio file?
+        if result.AssetTypeId == Enum.AssetType.Audio.Value then
+            sendNotification("Music Panel", "✅ Valid ID! Playing music...", 3, SOUND_ID_SUCCESS)
+            playMusic(musicId, volume, pitch)
+        else
+            sendNotification("Error", "⚠️ This ID is not for a music file.", 5, SOUND_ID_ERROR)
+        end
+    else
+        -- If the call failed (pcall returned 'false'), the ID does not exist.
+        sendNotification("Error", "❌ The music ID does not exist.", 5, SOUND_ID_ERROR)
+    end
 end)
 
-Z.MouseButton1Click:Connect(function()
-    local id = tonumber(W.Text)
-    local vol = tonumber(X.Text) or 1
-    local pitch = tonumber(Y.Text) or
+
+stopButton.MouseButton1Click:Connect(function()
+    stopAllMusic()
+end)
+
+helpButton.MouseButton1Click:Connect(function()
+    helpFrame.Visible = true
+end)
+
+closeHelpButton.MouseButton1Click:Connect(function()
+    helpFrame.Visible = false
+end)
+
+toggleButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+    if not frame.Visible then
+        helpFrame.Visible = false
+    end
+end)
