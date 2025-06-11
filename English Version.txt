@@ -1,179 +1,169 @@
-local A,B,C,D=game:GetService("Players"),game:GetService("Debris"),game:GetService("MarketplaceService"),game:GetService("ReplicatedStorage")
-local E=A.LocalPlayer:WaitForChild("PlayerGui")
-local F="rbxassetid://124288667234232"
-local G=Color3.fromRGB(60,60,60)
-local H,I="3625290171","2865228021"
+--[[
+    👑 MUSIC PANEL 👑
+    Obfuscado por ChatGPT para Felipe
+]]
 
-local function J(K)
-    for _,L in ipairs({D,game:GetService("Workspace")})do
-        for _,M in ipairs(L:GetDescendants())do
-            if M:IsA("RemoteEvent")and M.Name==K then return M end
+local a,b,c,d=game:GetService("Players"),game:GetService("Debris"),game:GetService("MarketplaceService"),game:GetService("ReplicatedStorage")
+local e=a.LocalPlayer:WaitForChild("PlayerGui")
+local f="rbxassetid://124288667234232"
+local g=Color3.fromRGB(60,60,60)
+local h="3625290171"
+local i="2865228021"
+local function j(k)
+    for _,l in ipairs({d,game:GetService("Workspace")})do
+        for _,m in ipairs(l:GetDescendants())do
+            if m:IsA("RemoteEvent")and m.Name==k then return m end
         end
     end
     return nil
 end
-
-local function N(O,P,Q,R)
-    if R and tonumber(R)then
+local function n(o,p,q,r)
+    if r and tonumber(r)then
         pcall(function()
-            local S=Instance.new("Sound")
-            S.Name="NotificationSound"
-            S.SoundId="rbxassetid://"..R
-            S.Volume=0.7
-            S.Parent=E
-            S:Play()
-            B:AddItem(S,S.TimeLength+1)
+            local s=Instance.new("Sound")
+            s.Name="NotificationSound"
+            s.SoundId="rbxassetid://"..r
+            s.Volume=0.7
+            s.Parent=e
+            s:Play()
+            b:AddItem(s,s.TimeLength+1)
         end)
     end
     pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification",{Title=O,Text=P,Duration=Q or 5})
+        game:GetService("StarterGui"):SetCore("SendNotification",{Title=o,Text=p,Duration=q or 5})
     end)
 end
-
-local function T()
-    local U="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    local V=""
-    for W=1,10 do
-        local X=math.random(1,#U)
-        V=V..U:sub(X,X)
+local function t()
+    local u="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+    local v=""
+    for w=1,10 do
+        local x=math.random(1,#u)
+        v=v..u:sub(x,x)
     end
-    return V
+    return v
 end
-
-local Y=nil
-
-local function Z(a1,a2,a3)
-    local a4=J("AC6_FE_Sounds")
-    if a4 then
-        if Y then
-            a4:FireServer("stopSound",Y)
-            Y=nil
-        end
-        local a5="rbxassetid://"..a1
-        local a6=T()
-        Y=a6
-        a4:FireServer("newSound",a6,workspace,a5,a3,a2,true)
-        a4:FireServer("playSound",a6)
-    else warn("AC6_FE_Sounds RemoteEvent not found.")end
-end
-
-local function a7()
-    local a8=J("AC6_FE_Sounds")
-    if a8 and Y then
-        a8:FireServer("stopSound",Y)
-        Y=nil
+local y=nil
+local function z(A,B,C)
+    local D=j("AC6_FE_Sounds")
+    if D then
+        if y then D:FireServer("stopSound",y) y=nil end
+        local E="rbxassetid://"..A
+        local F=t()
+        y=F
+        D:FireServer("newSound",F,workspace,E,C,B,true)
+        D:FireServer("playSound",F)
+    else
+        warn("AC6_FE_Sounds RemoteEvent not found.")
     end
 end
-
-if not J("AC6_FE_Sounds") then
-    N("Music Panel","❌ This game is not compatible.",5,I)
+local function G()
+    local D=j("AC6_FE_Sounds")
+    if D and y then
+        D:FireServer("stopSound",y)
+        y=nil
+    end
+end
+if not j("AC6_FE_Sounds") then
+    n("Music Panel","❌ This game is not compatible.",5,i)
     return
 end
-
-N("Music Panel","✅ Game compatible! By katsughz",5,H)
-
-local a9=Instance.new("ScreenGui",E)
-a9.Name="MusicPanelGui"
-a9.ResetOnSpawn=false
-a9.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
-
-local function b0(b1,b2)
-    local b3=Instance.new(b1)
-    for b4,b5 in pairs(b2)do b3[b4]=b5 end
-    return b3
+n("Music Panel","✅ Game compatible! By katsughz",5,h)
+local H=Instance.new("ScreenGui",e)
+H.Name="MusicPanelGui"
+H.ResetOnSpawn=false
+H.ZIndexBehavior=Enum.ZIndexBehavior.Sibling
+local function I(J,K)
+    local L=Instance.new(J)
+    for M,N in pairs(K)do
+        L[M]=N
+    end
+    return L
 end
-
-local b6=b0("Frame",{
-    Parent=a9,Name="MainFrame",Size=UDim2.new(0,280,0,230),Position=UDim2.new(0.5,-140,0.5,-115),
+local O=I("Frame",{
+    Parent=H,Name="MainFrame",Size=UDim2.new(0,280,0,230),Position=UDim2.new(0.5,-140,0.5,-115),
     BackgroundColor3=Color3.fromRGB(18,18,18),Active=true,Draggable=true,Visible=false
 })
-b0("UICorner",{Parent=b6,CornerRadius=UDim.new(0,12)})
-b0("UIStroke",{Parent=b6,Color=Color3.fromRGB(200,200,200)})
-
-local b7=b0("ImageLabel",{
-    Parent=b6,Name="Background",Size=UDim2.new(1,0,1,0),Image=F,
+I("UICorner",{Parent=O,CornerRadius=UDim.new(0,12)})
+I("UIStroke",{Parent=O,Color=Color3.fromRGB(200,200,200)})
+local P=I("ImageLabel",{
+    Parent=O,Name="Background",Size=UDim2.new(1,0,1,0),Image=f,
     ScaleType=Enum.ScaleType.Crop,Transparency=0.6,ZIndex=1
 })
-
-local function b8(b9,ba)
-    local bb=b0(b9,ba)
-    bb.ZIndex=2
-    b0("UICorner",{Parent=bb,CornerRadius=UDim.new(0,8)})
-    b0("UIStroke",{Parent=bb,Color=Color3.fromRGB(220,220,220)})
-    return bb
+local function Q(R,S)
+    local T=I(R,S)
+    T.ZIndex=2
+    I("UICorner",{Parent=T,CornerRadius=UDim.new(0,8)})
+    I("UIStroke",{Parent=T,Color=Color3.fromRGB(220,220,220)})
+    return T
 end
-
-local bc=b8("TextLabel",{
-    Parent=b6,Name="Title",Size=UDim2.new(1,0,0,35),
+local U=Q("TextLabel",{
+    Parent=O,Name="Title",Size=UDim2.new(1,0,0,35),
     BackgroundColor3=Color3.fromRGB(25,25,25),
     Text="👑 MUSIC PANEL 👑",
     TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.GothamBold,TextSize=18
 })
-bc.UIStroke.Enabled=false
-
-local bd=b8("TextButton",{
-    Parent=b6,Name="HelpButton",Text="?",Size=UDim2.new(0,22,0,22),
+U.UIStroke.Enabled=false
+local V=Q("TextButton",{
+    Parent=O,Name="HelpButton",Text="?",Size=UDim2.new(0,22,0,22),
     Position=UDim2.new(1,-10,0,6.5),AnchorPoint=Vector2.new(1,0),
-    BackgroundColor3=G,TextColor3=Color3.new(1,1,1),
+    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
     Font=Enum.Font.GothamBold,TextSize=16,ZIndex=3
 })
-
-b8("TextLabel",{
-    Parent=b6,Name="LabelID",Size=UDim2.new(0.9,0,0,15),
+Q("TextLabel",{
+    Parent=O,Name="LabelID",Size=UDim2.new(0.9,0,0,15),
     Position=UDim2.new(0.05,0,0.18,0),BackgroundTransparency=1,
     Text="MUSIC ID",TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
 }).UIStroke.Enabled=false
-
-local be=b8("TextBox",{
-    Parent=b6,Name="MusicID",PlaceholderText="Paste the ID here...",Text="",
+local W=Q("TextBox",{
+    Parent=O,Name="MusicID",PlaceholderText="Paste the ID here...",Text="",
     Size=UDim2.new(0.9,0,0,28),Position=UDim2.new(0.05,0,0.25,0),
     BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=14,ClearTextOnFocus=false
 })
-
-b8("TextLabel",{
-    Parent=b6,Name="LabelVolume",Size=UDim2.new(0.42,0,0,15),
+Q("TextLabel",{
+    Parent=O,Name="LabelVolume",Size=UDim2.new(0.42,0,0,15),
     Position=UDim2.new(0.05,0,0.42,0),BackgroundTransparency=1,
     Text="VOLUME",TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
 }).UIStroke.Enabled=false
-
-local bf=b8("TextBox",{
-    Parent=b6,Name="Volume",PlaceholderText="...",Text="",
+local X=Q("TextBox",{
+    Parent=O,Name="Volume",PlaceholderText="...",Text="",
     Size=UDim2.new(0.42,0,0,28),Position=UDim2.new(0.05,0,0.49,0),
     BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=14
 })
-
-b8("TextLabel",{
-    Parent=b6,Name="LabelPitch",Size=UDim2.new(0.43,0,0,15),
+Q("TextLabel",{
+    Parent=O,Name="LabelPitch",Size=UDim2.new(0.43,0,0,15),
     Position=UDim2.new(0.52,0,0.42,0),BackgroundTransparency=1,
     Text="PITCH",TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=12,TextXAlignment=Enum.TextXAlignment.Left
 }).UIStroke.Enabled=false
-
-local bg=b8("TextBox",{
-    Parent=b6,Name="Pitch",PlaceholderText="...",Text="1",
+local Y=Q("TextBox",{
+    Parent=O,Name="Pitch",PlaceholderText="...",Text="1",
     Size=UDim2.new(0.43,0,0,28),Position=UDim2.new(0.52,0,0.49,0),
     BackgroundColor3=Color3.fromRGB(35,35,35),TextColor3=Color3.fromRGB(255,255,255),
     Font=Enum.Font.Gotham,TextSize=14
 })
-
-local bh=b8("TextButton",{
-    Parent=b6,Name="PlayButton",Text="▶ PLAY",
+local Z=Q("TextButton",{
+    Parent=O,Name="PlayButton",Text="▶ PLAY",
     Size=UDim2.new(0.9,0,0,32),Position=UDim2.new(0.05,0,0.65,0),
-    BackgroundColor3=G,TextColor3=Color3.new(1,1,1),
+    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
     Font=Enum.Font.GothamBold,TextSize=15
 })
-
-local bi=b8("TextButton",{
-    Parent=b6,Name="StopButton",Text="⏹ STOP",
+local aa=Q("TextButton",{
+    Parent=O,Name="StopButton",Text="⏹ STOP",
     Size=UDim2.new(0.9,0,0,26),Position=UDim2.new(0.05,0,0.82,0),
-    BackgroundColor3=G,TextColor3=Color3.new(1,1,1),
+    BackgroundColor3=g,TextColor3=Color3.new(1,1,1),
     Font=Enum.Font.GothamBold,TextSize=13
 })
 
-local bj=b0("Frame",{
-    Parent=a9,Name="HelpFrame",Size=UDim2.new(0,340,0.75,0),Position=UDim2.new(0.5,0,0.5,0),AnchorPoint=Vector2.new(0.5,0.5
+V.MouseButton1Click:Connect(function()
+    O.Visible = not O.Visible
+end)
+
+Z.MouseButton1Click:Connect(function()
+    local id = tonumber(W.Text)
+    local vol = tonumber(X.Text) or 1
+    local pitch = tonumber(Y.Text) or
