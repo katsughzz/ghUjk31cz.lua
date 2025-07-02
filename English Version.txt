@@ -1,338 +1,261 @@
 --[[
     👑 MUSIC PANEL 👑
     Original Author: katsughz
-    Final Version with custom notification system and refinements.
+    Final Version with custom notification system and refinements.  
 ]]
 
---================================================================================--
--- [START] CUSTOM NOTIFICATION SYSTEM
---================================================================================--
-local Players = game:GetService("Players")
-local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
+local Service_Players = game:GetService("Players")
+local Local_Player = Service_Players.LocalPlayer
+local Player_Interface = Local_Player:WaitForChild("PlayerGui")
+local Service_Tween = game:GetService("TweenService")
+local Service_Debris = game:GetService("Debris")
+local Service_Marketplace = game:GetService("MarketplaceService")
 
--- Ensures the notification GUI is created only once
-local notificationGui = PlayerGui:FindFirstChild("NotificationExecutorGUI")
-if not notificationGui then
-    notificationGui = Instance.new("ScreenGui")
-    notificationGui.Name = "NotificationExecutorGUI"
-    notificationGui.ResetOnSpawn = false
-    notificationGui.IgnoreGuiInset = true
-    notificationGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    notificationGui.Parent = PlayerGui
+local GUI_Notice_Container = Player_Interface:FindFirstChild("NotificationExecutorGUI")
+if not GUI_Notice_Container then
+    GUI_Notice_Container = Instance.new("ScreenGui", Player_Interface)
+    GUI_Notice_Container.Name = "NotificationExecutorGUI"
+    GUI_Notice_Container.ResetOnSpawn = false
+    GUI_Notice_Container.IgnoreGuiInset = true
+    GUI_Notice_Container.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 end
 
--- Table to manage active notifications and their positions
-local activeNotifications = {}
+local Active_Notices_Tbl = {}
+local Cfg_NoticeSize = Vector2.new(220, 70)
+local Cfg_ScreenMargin = Vector2.new(10, 10)
+local Cfg_Spacing = 8
 
--- Notification settings
-local NOTIFICATION_SIZE = Vector2.new(220, 70)
-local SCREEN_MARGIN = Vector2.new(10, 10) 
-local SPACING_BETWEEN = 8
-
--- Function to reorganize positions when a notification is removed
-local function updatePositions()
-    local currentY = SCREEN_MARGIN.Y
-    for i = 1, #activeNotifications do
-        local frame = activeNotifications[i]
-        if frame and frame.Parent then
-            local targetPosition = UDim2.new(1, -SCREEN_MARGIN.X, 1, -currentY)
-            game:GetService("TweenService"):Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPosition}):Play()
-            currentY = currentY + NOTIFICATION_SIZE.Y + SPACING_BETWEEN
+local function Func_UpdateNoticePositions()
+    local var_currentY = Cfg_ScreenMargin.Y
+    for i = 1, #Active_Notices_Tbl do
+        local notice_frame = Active_Notices_Tbl[i]
+        if notice_frame and notice_frame.Parent then
+            local pos_target = UDim2.new(1, -Cfg_ScreenMargin.X, 1, -var_currentY)
+            Service_Tween:Create(notice_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_target}):Play()
+            var_currentY = var_currentY + Cfg_NoticeSize.Y + Cfg_Spacing
         end
     end
 end
 
--- The main function to create and display the notification
-function notify(title, subtitle, duration)
-    duration = duration or 4
+function Func_DisplayNotice(p_title, p_subtitle, p_duration)
+    local var_duration = p_duration or 4
+    local obj_frame = Instance.new("Frame")
+    obj_frame.Size = UDim2.fromOffset(Cfg_NoticeSize.X, Cfg_NoticeSize.Y)
+    obj_frame.AnchorPoint = Vector2.new(1, 1)
+    obj_frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    obj_frame.BorderSizePixel = 0
+    obj_frame.Parent = GUI_Notice_Container
 
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.fromOffset(NOTIFICATION_SIZE.X, NOTIFICATION_SIZE.Y)
-    frame.AnchorPoint = Vector2.new(1, 1)
-    frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
-    frame.BorderSizePixel = 0
-    frame.Parent = notificationGui
+    Instance.new("UICorner", obj_frame).CornerRadius = UDim.new(0, 12)
 
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = frame
+    local obj_title = Instance.new("TextLabel", obj_frame)
+    obj_title.Text = p_title or "Notification"
+    obj_title.Font = Enum.Font.GothamBold
+    obj_title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    obj_title.TextSize = 16
+    obj_title.BackgroundTransparency = 1
+    obj_title.Size = UDim2.new(1, -20, 0, 28)
+    obj_title.Position = UDim2.fromOffset(10, 8)
+    obj_title.TextXAlignment = Enum.TextXAlignment.Center
 
-    -- Title
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Text = title or "Notification"
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 16
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Size = UDim2.new(1, -20, 0, 28)
-    titleLabel.Position = UDim2.fromOffset(10, 8)
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Center -- Centered text
-    titleLabel.Parent = frame
+    local obj_subtitle = Instance.new("TextLabel", obj_frame)
+    obj_subtitle.Text = p_subtitle or "..."
+    obj_subtitle.Font = Enum.Font.Gotham
+    obj_subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
+    obj_subtitle.TextSize = 14
+    obj_subtitle.BackgroundTransparency = 1
+    obj_subtitle.Size = UDim2.new(1, -20, 0, 22)
+    obj_subtitle.Position = UDim2.fromOffset(10, 38)
+    obj_subtitle.TextXAlignment = Enum.TextXAlignment.Center
 
-    -- Subtitle
-    local subtitleLabel = Instance.new("TextLabel")
-    subtitleLabel.Text = subtitle or "..."
-    subtitleLabel.Font = Enum.Font.Gotham
-    subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    subtitleLabel.TextSize = 14
-    subtitleLabel.BackgroundTransparency = 1
-    subtitleLabel.Size = UDim2.new(1, -20, 0, 22)
-    subtitleLabel.Position = UDim2.fromOffset(10, 38)
-    subtitleLabel.TextXAlignment = Enum.TextXAlignment.Center -- Centered text
-    subtitleLabel.Parent = frame
-
-    -- Entrance animation
-    local startY = SCREEN_MARGIN.Y
-    for i = 1, #activeNotifications do
-        startY = startY + NOTIFICATION_SIZE.Y + SPACING_BETWEEN
-    end
-    local targetPosition = UDim2.new(1, -SCREEN_MARGIN.X, 1, -startY)
-    local startPosition = targetPosition + UDim2.fromOffset(0, 80)
-    frame.Position = startPosition
-    frame.BackgroundTransparency = 0.5
-    local tweenIn = game:GetService("TweenService"):Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = targetPosition, BackgroundTransparency = 0})
-    tweenIn:Play()
+    local var_startY = Cfg_ScreenMargin.Y
+    for i = 1, #Active_Notices_Tbl do var_startY = var_startY + Cfg_NoticeSize.Y + Cfg_Spacing end
     
-    table.insert(activeNotifications, frame)
+    local pos_final = UDim2.new(1, -Cfg_ScreenMargin.X, 1, -var_startY)
+    obj_frame.Position = pos_final + UDim2.fromOffset(0, 80)
+    obj_frame.BackgroundTransparency = 0.5
+    
+    Service_Tween:Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_final, BackgroundTransparency = 0}):Play()
+    table.insert(Active_Notices_Tbl, obj_frame)
 
-    -- Automatic disappearance
-    task.delay(duration, function()
-        if frame and frame.Parent then
-            for i, v in ipairs(activeNotifications) do if v == frame then table.remove(activeNotifications, i); break; end end
-            local tweenOut = game:GetService("TweenService"):Create(frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = frame.Position + UDim2.fromOffset(0, 80), BackgroundTransparency = 1})
-            tweenOut:Play()
-            updatePositions()
-            tweenOut.Completed:Wait()
-            frame:Destroy()
+    task.delay(var_duration, function()
+        if obj_frame and obj_frame.Parent then
+            for i, v in ipairs(Active_Notices_Tbl) do if v == obj_frame then table.remove(Active_Notices_Tbl, i); break; end end
+            local anim_out = Service_Tween:Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = obj_frame.Position + UDim2.fromOffset(0, 80), BackgroundTransparency = 1})
+            anim_out:Play()
+            Func_UpdateNoticePositions()
+            anim_out.Completed:Wait()
+            obj_frame:Destroy()
         end
     end)
 end
--- [END] CUSTOM NOTIFICATION SYSTEM
---================================================================================--
 
+local SoundID_Success = "3625290171"
+local SoundID_Error = "2865228021"
+local ImgID_Background = "rbxassetid://124288667234232"
+local Color_Button = Color3.fromRGB(60, 60, 60)
 
---================================================================================--
--- SERVICES AND CONFIGURATIONS
---================================================================================--
-local Debris = game:GetService("Debris") 
-local MarketplaceService = game:GetService("MarketplaceService")
-local LocalPlayer = Players.LocalPlayer
--- PlayerGui was already defined in the notification section
+local Name_PredictableSound = "MusicPanel_UserId_" .. Local_Player.UserId
+local Name_CurrentSound = nil
 
-local BACKGROUND_IMAGE_ID = "rbxassetid://124288667234232"
-local BUTTON_COLOR = Color3.fromRGB(60, 60, 60)
-
--- ================================================================================--
--- SOUND IDs
--- ================================================================================--
-local SOUND_ID_SUCCESS = "3625290171" 
-local SOUND_ID_ERROR   = "2865228021" 
--- ================================================================================--
-
-local predictableSoundName = "MusicPanel_UserId_" .. LocalPlayer.UserId
-local currentSoundName = nil
-
---================================================================================--
--- HELPER AND MAIN FUNCTIONS
---================================================================================--
-local function findRemoteEvent(name)
+local function Func_FindRemote(remoteName)
     for _, service in ipairs({game:GetService("ReplicatedStorage"), game:GetService("Workspace")}) do
-        for _, obj in ipairs(service:GetDescendants()) do
-            if obj:IsA("RemoteEvent") and obj.Name == name then
-                return obj
-            end
+        for _, child in ipairs(service:GetDescendants()) do
+            if child:IsA("RemoteEvent") and child.Name == remoteName then return child end
         end
     end
     return nil
 end
 
--- (NEW) Function to play only the notification sound
-local function playNotificationSound(soundId)
+local function Func_PlayNoticeSound(soundId)
     if soundId and tonumber(soundId) then
         pcall(function()
-            local sound = Instance.new("Sound")
-            sound.Name = "NotificationSound"
-            sound.SoundId = "rbxassetid://" .. soundId
-            sound.Volume = 0.7 
-            sound.Parent = PlayerGui
-            sound:Play()
-            Debris:AddItem(sound, sound.TimeLength + 1)
+            local sound_obj = Instance.new("Sound")
+            sound_obj.Name = "NotificationSound"
+            sound_obj.SoundId = "rbxassetid://" .. soundId
+            sound_obj.Volume = 0.7
+            sound_obj.Parent = Player_Interface
+            sound_obj:Play()
+            Service_Debris:AddItem(sound_obj, sound_obj.TimeLength + 1)
         end)
     end
 end
 
-local function playMusic(musicId, volume, pitch)
-    local remote = findRemoteEvent("AC6_FE_Sounds")
+local function Func_PlayMusic(musicId, volume, pitch)
+    local remote = Func_FindRemote("AC6_FE_Sounds")
     if remote then
-        remote:FireServer("stopSound", predictableSoundName)
-        currentSoundName = predictableSoundName
+        remote:FireServer("stopSound", Name_PredictableSound)
+        Name_CurrentSound = Name_PredictableSound
         local assetId = "rbxassetid://" .. musicId
-        remote:FireServer("newSound", currentSoundName, workspace, assetId, pitch, volume, true)
-        remote:FireServer("playSound", currentSoundName)
+        remote:FireServer("newSound", Name_CurrentSound, workspace, assetId, pitch, volume, true)
+        remote:FireServer("playSound", Name_CurrentSound)
     else
         warn("AC6_FE_Sounds RemoteEvent not found.")
     end
 end
 
-local function stopAllMusic()
-    local remote = findRemoteEvent("AC6_FE_Sounds")
+local function Func_StopAllMusic()
+    local remote = Func_FindRemote("AC6_FE_Sounds")
     if not remote then warn("AC6_FE_Sounds RemoteEvent not found."); return; end
 
-    local musicWasStopped = false
+    local was_stopped = false
     for _, sound in ipairs(workspace:GetDescendants()) do
         if sound:IsA("Sound") and sound.IsPlaying then
             remote:FireServer("stopSound", sound.Name)
-            musicWasStopped = true 
+            was_stopped = true
         end
     end
     
-    if musicWasStopped then
-        -- (CHANGED) Uses the new notification system
-        notify("Music", "Stopped.", 3)
-    end
-    
-    currentSoundName = nil
+    if was_stopped then Func_DisplayNotice("Music", "Stopped.", 3) end
+    Name_CurrentSound = nil
 end
 
---================================================================================--
--- "ADOPTION" LOGIC TO REGAIN CONTROL OF THE SOUND
---================================================================================--
-local function adoptOrphanedSound()
-    local orphanedSound = workspace:FindFirstChild(predictableSoundName)
-    if orphanedSound and orphanedSound:IsA("Sound") then
+local function Func_AdoptOrphanedSound()
+    local orphaned = workspace:FindFirstChild(Name_PredictableSound)
+    if orphaned and orphaned:IsA("Sound") then
         print("Music Panel: Orphaned sound found and adopted.")
-        currentSoundName = predictableSoundName
+        Name_CurrentSound = Name_PredictableSound
     end
 end
 
---================================================================================--
--- INITIAL CHECK AND EXECUTION
---================================================================================--
-
-if not findRemoteEvent("AC6_FE_Sounds") then
-    -- (CHANGED) Uses the new notification system
-    playNotificationSound(SOUND_ID_ERROR)
-    notify("Error", "Game not compatible.", 5)
+if not Func_FindRemote("AC6_FE_Sounds") then
+    Func_PlayNoticeSound(SoundID_Error)
+    Func_DisplayNotice("Error", "Game not compatible.", 5)
     return
 end
 
--- (CHANGED) Uses the new notification system
-playNotificationSound(SOUND_ID_SUCCESS)
-notify("System", "Music Panel Loaded!", 5)
+Func_PlayNoticeSound(SoundID_Success)
+Func_DisplayNotice("System", "Music Panel Loaded!", 5)
+Func_AdoptOrphanedSound()
 
-adoptOrphanedSound()
+local GUI_Main = Instance.new("ScreenGui", Player_Interface)
+GUI_Main.Name = "MusicPanelGui"
+GUI_Main.ResetOnSpawn = false
+GUI_Main.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
---================================================================================--
--- GRAPHICAL USER INTERFACE (GUI) CREATION
---================================================================================--
-
-local gui = Instance.new("ScreenGui", PlayerGui)
-gui.Name = "MusicPanelGui"
-gui.ResetOnSpawn = false
-gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-
-local function create(instanceType, props)
+local function Util_Create(instanceType, props)
     local obj = Instance.new(instanceType)
     for p, v in pairs(props) do obj[p] = v end
     return obj
 end
 
-local frame = create("Frame", {
-    Parent = gui, Name = "MainFrame", Size = UDim2.new(0, 280, 0, 260), -- Height increased for better spacing
-    Position = UDim2.new(0.5, -140, 0.5, -130), -- Centered position with the new height
-    BackgroundColor3 = Color3.fromRGB(18, 18, 18), Active = true, Draggable = true, Visible = false
-})
-create("UICorner", { Parent = frame, CornerRadius = UDim.new(0, 12) })
-create("UIStroke", { Parent = frame, Color = Color3.fromRGB(200, 200, 200) })
+local Frame_Main = Util_Create("Frame", {Parent = GUI_Main, Name = "MainFrame", Size = UDim2.new(0, 280, 0, 260), Position = UDim2.new(0.5, -140, 0.5, -130), BackgroundColor3 = Color3.fromRGB(18, 18, 18), Active = true, Draggable = true, Visible = false})
+Util_Create("UICorner", {Parent = Frame_Main, CornerRadius = UDim.new(0, 12)})
+Util_Create("UIStroke", {Parent = Frame_Main, Color = Color3.fromRGB(200, 200, 200)})
+Util_Create("ImageLabel", {Parent = Frame_Main, Name = "Background", Size = UDim2.new(1, 0, 1, 0), Image = ImgID_Background, ScaleType = Enum.ScaleType.Crop, Transparency = 0.6, ZIndex = 1})
 
-local backgroundImage = create("ImageLabel", {
-    Parent = frame, Name = "Background", Size = UDim2.new(1, 0, 1, 0), Image = BACKGROUND_IMAGE_ID,
-    ScaleType = Enum.ScaleType.Crop, Transparency = 0.6, ZIndex = 1
-})
-
-local function createStyled(instanceType, props)
-    local obj = create(instanceType, props)
+local function Util_CreateStyled(instanceType, props)
+    local obj = Util_Create(instanceType, props)
     obj.ZIndex = 2
-    create("UICorner", { Parent = obj, CornerRadius = UDim.new(0, 8) })
-    create("UIStroke", { Parent = obj, Color = Color3.fromRGB(220, 220, 220) })
+    Util_Create("UICorner", {Parent = obj, CornerRadius = UDim.new(0, 8)})
+    Util_Create("UIStroke", {Parent = obj, Color = Color3.fromRGB(220, 220, 220)})
     return obj
 end
 
-local title = createStyled("TextLabel", { Parent = frame, Name = "Title", Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Color3.fromRGB(25, 25, 25), Text = "👑 MUSIC PANEL 👑", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 18 })
-title.UIStroke.Enabled = false
-local helpButton = createStyled("TextButton", { Parent = frame, Name = "HelpButton", Text = "?", Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -10, 0, 6.5), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 16, ZIndex = 3 })
-createStyled("TextLabel", { Parent = frame, Name = "LabelID", Size = UDim2.new(0.9, 0, 0, 15), Position = UDim2.new(0.05, 0, 0.18, 0), BackgroundTransparency = 1, Text = "MUSIC ID", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left }).UIStroke.Enabled = false
-local musicBox = createStyled("TextBox", { Parent = frame, Name = "MusicID", PlaceholderText = "Paste the ID here...", Text = "", Size = UDim2.new(0.9, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.25, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14, ClearTextOnFocus = false })
-createStyled("TextLabel", { Parent = frame, Name = "LabelVolume", Size = UDim2.new(0.42, 0, 0, 15), Position = UDim2.new(0.05, 0, 0.42, 0), BackgroundTransparency = 1, Text = "VOLUME", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left }).UIStroke.Enabled = false
-local volumeBox = createStyled("TextBox", { Parent = frame, Name = "Volume", PlaceholderText = "...", Text = "", Size = UDim2.new(0.42, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.49, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14 })
-createStyled("TextLabel", { Parent = frame, Name = "LabelPitch", Size = UDim2.new(0.43, 0, 0, 15), Position = UDim2.new(0.52, 0, 0.42, 0), BackgroundTransparency = 1, Text = "PITCH", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left }).UIStroke.Enabled = false
-local pitchBox = createStyled("TextBox", { Parent = frame, Name = "Pitch", PlaceholderText = "...", Text = "1", Size = UDim2.new(0.43, 0, 0, 28), Position = UDim2.new(0.52, 0, 0.49, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14 })
-local playButton = createStyled("TextButton", { Parent = frame, Name = "PlayButton", Text = "▶ PLAY", Size = UDim2.new(0.9, 0, 0, 32), Position = UDim2.new(0.05, 0, 0.65, 0), BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 15 })
-local stopButton = createStyled("TextButton", { Parent = frame, Name = "StopButton", Text = "⏹ STOP", Size = UDim2.new(0.9, 0, 0, 32), Position = UDim2.new(0.05, 0, 0.80, 0), BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 15 })
+local Elem_Title = Util_CreateStyled("TextLabel", {Parent = Frame_Main, Name = "Title", Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Color3.fromRGB(25, 25, 25), Text = "👑 MUSIC PANEL 👑", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 18})
+Elem_Title.UIStroke.Enabled = false
+local Btn_Help = Util_CreateStyled("TextButton", {Parent = Frame_Main, Name = "HelpButton", Text = "?", Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(1, -10, 0, 6.5), AnchorPoint = Vector2.new(1, 0), BackgroundColor3 = Color_Button, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 16, ZIndex = 3})
 
--- (CHANGED) Signature with the new, more visible color.
-local signatureLabel = create("TextLabel", {
-    Parent = frame, Name = "Signature", Text = "By katsughz",
-    Size = UDim2.new(1, -20, 0, 15), Position = UDim2.new(0.5, 0, 1, -5),
-    AnchorPoint = Vector2.new(0.5, 1),
-    BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 12,
-    TextColor3 = Color3.fromRGB(220, 220, 220), -- Color changed to a lighter, more visible gray
-    ZIndex = 2
-})
+Util_CreateStyled("TextLabel", {Parent = Frame_Main, Name = "LabelID", Size = UDim2.new(0.9, 0, 0, 15), Position = UDim2.new(0.05, 0, 0.18, 0), BackgroundTransparency = 1, Text = "MUSIC ID", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left}).UIStroke.Enabled = false
+local Input_MusicID = Util_CreateStyled("TextBox", {Parent = Frame_Main, Name = "MusicID", PlaceholderText = "Paste the ID here...", Text = "", Size = UDim2.new(0.9, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.25, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14, ClearTextOnFocus = false})
+Util_CreateStyled("TextLabel", {Parent = Frame_Main, Name = "LabelVolume", Size = UDim2.new(0.42, 0, 0, 15), Position = UDim2.new(0.05, 0, 0.42, 0), BackgroundTransparency = 1, Text = "VOLUME", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left}).UIStroke.Enabled = false
+local Input_Volume = Util_CreateStyled("TextBox", {Parent = Frame_Main, Name = "Volume", PlaceholderText = "...", Text = "", Size = UDim2.new(0.42, 0, 0, 28), Position = UDim2.new(0.05, 0, 0.49, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14})
+Util_CreateStyled("TextLabel", {Parent = Frame_Main, Name = "LabelPitch", Size = UDim2.new(0.43, 0, 0, 15), Position = UDim2.new(0.52, 0, 0.42, 0), BackgroundTransparency = 1, Text = "PITCH", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 12, TextXAlignment = Enum.TextXAlignment.Left}).UIStroke.Enabled = false
+local Input_Pitch = Util_CreateStyled("TextBox", {Parent = Frame_Main, Name = "Pitch", PlaceholderText = "...", Text = "1", Size = UDim2.new(0.43, 0, 0, 28), Position = UDim2.new(0.52, 0, 0.49, 0), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Gotham, TextSize = 14})
 
-local helpFrame = create("Frame", { Parent = gui, Name = "HelpFrame", Size = UDim2.new(0, 340, 0.75, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(25, 25, 25), ZIndex = 10, Visible = false, Active = true, Draggable = true })
-create("UICorner", { Parent = helpFrame, CornerRadius = UDim.new(0, 12) })
-create("UIStroke", { Parent = helpFrame, Color = Color3.fromRGB(220, 220, 220) })
-local helpTitle = create("TextLabel", { Parent = helpFrame, Name = "HelpTitle", Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Color3.fromRGB(40, 40, 40), Text = "💡 Instructions", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 11 })
-local scrollingContent = create("ScrollingFrame", { Parent = helpFrame, Name = "ScrollingContent", Size = UDim2.new(1, 0, 1, -75), Position = UDim2.new(0, 0, 0, 35), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150), ScrollBarThickness = 6, ZIndex = 11 })
-local helpText = create("TextLabel", { Parent = scrollingContent, Name = "HelpText", Size = UDim2.new(1, -10, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(240, 240, 240), Text = "🎵 Script Description:\n\nThis script adds a simple and functional music panel to your game, allowing the player to play music using a Roblox audio ID (AssetId). It is compatible with games that use the AC6_FE_Sounds system to play sounds.\n\n\n--- ✅ Compatibility: ---\n\nWorks best in car games.\n\nCompatible with games that have the \"AC6_FE_Sounds\" RemoteEvent inside ReplicatedStorage.\n\nThis event is common in games with custom sound systems from the AC6 community.\n\n\n--- ⚙️ How to use: ---\n\n1. Enter the Roblox music ID (AssetId).\n\n\n2. Adjust the following parameters:\n\n   Volume: from 0.1 to 10 (e.g., 1 = normal volume).\n\n   Pitch: from 0.5 to 2 (e.g., 1 = normal pitch, 1.2 = higher, 0.8 = lower).\n\n\n3. Press the \"Play\" button to start the music.\n\n\n4. Press \"Stop\" to stop the current music.\n\n\n--- 🔒 Security and Verification:\n\nThe script automatically checks if the game has the \"AC6_FE_Sounds\" event before activating the panel.\n\nEnsures that only one song plays at a time, preventing overlaps.\n\nShows notifications in case of an error or if the game is not compatible.", TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 12 })
-local closeHelpButton = createStyled("TextButton", { Parent = helpFrame, Name = "CloseHelpButton", Text = "CLOSE", Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 1, -40), BackgroundColor3 = BUTTON_COLOR, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 11 })
+local Btn_Play = Util_CreateStyled("TextButton", {Parent = Frame_Main, Name = "PlayButton", Text = "▶ PLAY", Size = UDim2.new(0.9, 0, 0, 32), Position = UDim2.new(0.05, 0, 0.65, 0), BackgroundColor3 = Color_Button, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 15})
+local Btn_Stop = Util_CreateStyled("TextButton", {Parent = Frame_Main, Name = "StopButton", Text = "⏹ STOP", Size = UDim2.new(0.9, 0, 0, 32), Position = UDim2.new(0.05, 0, 0.80, 0), BackgroundColor3 = Color_Button, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 15})
 
-local toggleButton = createStyled("TextButton", { Parent = gui, Name = "ToggleButton", Text = "🎵", Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(1, -60, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 24, ZIndex = 5, Active = true, Draggable = true })
+Util_Create("TextLabel", {Parent = Frame_Main, Name = "Signature", Text = "By katsughz", Size = UDim2.new(1, -20, 0, 15), Position = UDim2.new(0.5, 0, 1, -5), AnchorPoint = Vector2.new(0.5, 1), BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = Color3.fromRGB(220, 220, 220), ZIndex = 2})
 
---================================================================================--
--- BUTTON LOGIC
---================================================================================--
+local Frame_Help = Util_Create("Frame", {Parent = GUI_Main, Name = "HelpFrame", Size = UDim2.new(0, 340, 0.75, 0), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(25, 25, 25), ZIndex = 10, Visible = false, Active = true, Draggable = true})
+Util_Create("UICorner", {Parent = Frame_Help, CornerRadius = UDim.new(0, 12)})
+Util_Create("UIStroke", {Parent = Frame_Help, Color = Color3.fromRGB(220, 220, 220)})
+Util_Create("TextLabel", {Parent = Frame_Help, Name = "HelpTitle", Size = UDim2.new(1, 0, 0, 35), BackgroundColor3 = Color3.fromRGB(40, 40, 40), Text = "💡 Instructions", TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.GothamBold, TextSize = 18, ZIndex = 11})
+local Elem_Scrolling = Util_Create("ScrollingFrame", {Parent = Frame_Help, Name = "ScrollingContent", Size = UDim2.new(1, 0, 1, -75), Position = UDim2.new(0, 0, 0, 35), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150), ScrollBarThickness = 6, ZIndex = 11})
+Util_Create("TextLabel", {Parent = Elem_Scrolling, Name = "HelpText", Size = UDim2.new(1, -10, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(240, 240, 240), Text = "🎵 Script Description:\n\nThis script adds a simple and functional music panel to your game, allowing the player to play music using a Roblox audio ID (AssetId).\n\n--- ✅ Compatibility: ---\n\nWorks best in car games.\n\nCompatible with games that have the \"AC6_FE_Sounds\" RemoteEvent inside ReplicatedStorage.\n\nThis event is common in games with custom sound systems from the AC6 community.\n\n\n--- ⚙️ How to use: ---\n\n1. Enter the Roblox music ID (AssetId).\n\n\n2. Adjust the following parameters:\n\n   Volume: from 0.1 to 10 (e.g., 1 = normal volume).\n\n   Pitch: from 0.5 to 2 (e.g., 1 = normal pitch, 1.2 = higher, 0.8 = lower).\n\n\n3. Press the \"Play\" button to start the music.\n\n\n4. Press \"Stop\" to stop the current music.\n\n\n--- 🔒 Security and Verification:\n\nThe script automatically checks if the game has the \"AC6_FE_Sounds\" event before activating the panel.\n\nEnsures that only one song plays at a time, preventing overlaps.\n\nShows notifications in case of an error or if the game is not compatible.", TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 12})
+local Btn_CloseHelp = Util_CreateStyled("TextButton", {Parent = Frame_Help, Name = "CloseHelpButton", Text = "CLOSE", Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 1, -40), BackgroundColor3 = Color_Button, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 11})
 
-playButton.MouseButton1Click:Connect(function()
-    local musicId = musicBox.Text
-    local volume = tonumber(volumeBox.Text) or 1
-    local pitch = tonumber(pitchBox.Text) or 1
+local Btn_Toggle = Util_CreateStyled("TextButton", {Parent = GUI_Main, Name = "ToggleButton", Text = "🎵", Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(1, -60, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 24, ZIndex = 5, Active = true, Draggable = true})
+
+Btn_Play.MouseButton1Click:Connect(function()
+    local var_musicId = Input_MusicID.Text
+    local var_volume = tonumber(Input_Volume.Text) or 1
+    local var_pitch = tonumber(Input_Pitch.Text) or 1
     
-    if not tonumber(musicId) then
-        playNotificationSound(SOUND_ID_ERROR)
-        notify("Error", "Invalid ID (not a number).", 5)
+    if not tonumber(var_musicId) then
+        Func_PlayNoticeSound(SoundID_Error)
+        Func_DisplayNotice("Error", "Invalid ID (not a number).", 5)
         return
     end
 
-    local success, result = pcall(function() return MarketplaceService:GetProductInfo(tonumber(musicId)) end)
+    local success, result = pcall(function() return Service_Marketplace:GetProductInfo(tonumber(var_musicId)) end)
 
     if success and result then
         if result.Name == "[ Content Deleted ]" then
-            playNotificationSound(SOUND_ID_ERROR)
-            notify("Error", "This audio has been deleted.", 5)
+            Func_PlayNoticeSound(SoundID_Error)
+            Func_DisplayNotice("Error", "This audio has been deleted.", 5)
             return
         end
 
         if result.AssetTypeId == Enum.AssetType.Audio.Value then
-            playNotificationSound(SOUND_ID_SUCCESS)
-            notify("Music", "Playing...", 3)
-            playMusic(musicId, volume, pitch)
+            Func_PlayNoticeSound(SoundID_Success)
+            Func_DisplayNotice("Music", "Playing...", 3)
+            Func_PlayMusic(var_musicId, var_volume, var_pitch)
         else
-            playNotificationSound(SOUND_ID_ERROR)
-            notify("Error", "This ID does not belong to an audio.", 5)
+            Func_PlayNoticeSound(SoundID_Error)
+            Func_DisplayNotice("Error", "This ID does not belong to an audio.", 5)
         end
     else
-        playNotificationSound(SOUND_ID_ERROR)
-        notify("Error", "Music ID does not exist.", 5)
+        Func_PlayNoticeSound(SoundID_Error)
+        Func_DisplayNotice("Error", "Music ID does not exist.", 5)
     end
 end)
 
-
-stopButton.MouseButton1Click:Connect(stopAllMusic)
-helpButton.MouseButton1Click:Connect(function() helpFrame.Visible = true end)
-closeHelpButton.MouseButton1Click:Connect(function() helpFrame.Visible = false end)
-toggleButton.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
-    if not frame.Visible then helpFrame.Visible = false end
+Btn_Stop.MouseButton1Click:Connect(Func_StopAllMusic)
+Btn_Help.MouseButton1Click:Connect(function() Frame_Help.Visible = true end)
+Btn_CloseHelp.MouseButton1Click:Connect(function() Frame_Help.Visible = false end)
+Btn_Toggle.MouseButton1Click:Connect(function()
+    Frame_Main.Visible = not Frame_Main.Visible
+    if not Frame_Main.Visible then Frame_Help.Visible = false end
 end)
