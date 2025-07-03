@@ -1,16 +1,16 @@
 --[[
     👑 MUSIC PANEL 👑
     Original Author: katsughz
-    Final version with custom notification system and new help panel logic.
+    Final version with custom notification system and refinements.
 ]]
 
+--================================================================================--
+-- [START] CUSTOM NOTIFICATION SYSTEM
+--================================================================================--
 local Srv_Players = game:GetService("Players")
-local Var_LocalPlayer = Srv_Players.LocalPlayer
-local Var_PlayerGui = Var_LocalPlayer:WaitForChild("PlayerGui")
-local Srv_Tween = game:GetService("TweenService")
-local Srv_Debris = game:GetService("Debris")
-local Srv_Marketplace = game:GetService("MarketplaceService")
+local Var_PlayerGui = Srv_Players.LocalPlayer:WaitForChild("PlayerGui")
 
+-- Ensures the notification GUI is created only once
 local GUI_NotificationHost = Var_PlayerGui:FindFirstChild("NotificacaoExecutorGUI")
 if not GUI_NotificationHost then
     GUI_NotificationHost = Instance.new("ScreenGui", Var_PlayerGui)
@@ -20,61 +20,82 @@ if not GUI_NotificationHost then
     GUI_NotificationHost.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 end
 
+-- Table to manage active notifications and their positions
 local Tbl_ActiveNotifications = {}
-local Cfg_NotificationSize = Vector2.new(220, 70)
-local Cfg_ScreenMargin = Vector2.new(10, 10)
+
+-- Notification settings
+local Cfg_NotificationSize = Vector2.new(160, 50)
+-- (MODIFIED) The Y margin was increased again to move the notification even higher.
+local Cfg_ScreenMargin = Vector2.new(10, 150)
 local Cfg_Spacing = 8
 
+-- Function to reorganize positions when a notification is removed
 local function Func_UpdatePositions()
     local var_currentY = Cfg_ScreenMargin.Y
     for i = 1, #Tbl_ActiveNotifications do
         local obj_frame = Tbl_ActiveNotifications[i]
         if obj_frame and obj_frame.Parent then
             local pos_target = UDim2.new(1, -Cfg_ScreenMargin.X, 1, -var_currentY)
-            Srv_Tween:Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_target}):Play()
+            game:GetService("TweenService"):Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_target}):Play()
             var_currentY = var_currentY + Cfg_NotificationSize.Y + Cfg_Spacing
         end
     end
 end
 
+-- The main function to create and display the notification
 function Func_Notify(p_title, p_subtitle, p_duration)
     local var_duration = p_duration or 4
+
     local obj_frame = Instance.new("Frame")
     obj_frame.Size = UDim2.fromOffset(Cfg_NotificationSize.X, Cfg_NotificationSize.Y)
     obj_frame.AnchorPoint = Vector2.new(1, 1)
     obj_frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     obj_frame.BorderSizePixel = 0
     obj_frame.Parent = GUI_NotificationHost
+
     Instance.new("UICorner", obj_frame).CornerRadius = UDim.new(0, 12)
+
+    -- Title
     local obj_title = Instance.new("TextLabel", obj_frame)
     obj_title.Text = p_title or "Notification"
     obj_title.Font = Enum.Font.GothamBold
     obj_title.TextColor3 = Color3.fromRGB(255, 255, 255)
-    obj_title.TextSize = 16
+    obj_title.TextSize = 14
     obj_title.BackgroundTransparency = 1
-    obj_title.Size = UDim2.new(1, -20, 0, 28)
-    obj_title.Position = UDim2.fromOffset(10, 8)
+    obj_title.Size = UDim2.new(1, -10, 0, 20)
+    obj_title.Position = UDim2.fromOffset(5, 5)
     obj_title.TextXAlignment = Enum.TextXAlignment.Center
+
+    -- Subtitle
     local obj_subtitle = Instance.new("TextLabel", obj_frame)
     obj_subtitle.Text = p_subtitle or "..."
     obj_subtitle.Font = Enum.Font.Gotham
     obj_subtitle.TextColor3 = Color3.fromRGB(200, 200, 200)
-    obj_subtitle.TextSize = 14
+    obj_subtitle.TextSize = 12
     obj_subtitle.BackgroundTransparency = 1
-    obj_subtitle.Size = UDim2.new(1, -20, 0, 22)
-    obj_subtitle.Position = UDim2.fromOffset(10, 38)
+    obj_subtitle.Size = UDim2.new(1, -10, 0, 16)
+    obj_subtitle.Position = UDim2.fromOffset(5, 26)
     obj_subtitle.TextXAlignment = Enum.TextXAlignment.Center
+
+    -- Entrance animation
     local var_startY = Cfg_ScreenMargin.Y
     for i = 1, #Tbl_ActiveNotifications do var_startY = var_startY + Cfg_NotificationSize.Y + Cfg_Spacing end
-    local pos_final = UDim2.new(1, -Cfg_ScreenMargin.X, 1, -var_startY)
-    obj_frame.Position = pos_final + UDim2.fromOffset(0, 80)
+    local pos_target = UDim2.new(1, -Cfg_ScreenMargin.X, 1, -var_startY)
+    local pos_start = pos_target + UDim2.fromOffset(0, 80)
+    obj_frame.Position = pos_start
     obj_frame.BackgroundTransparency = 0.5
-    Srv_Tween:Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_final, BackgroundTransparency = 0}):Play()
+    -- (MODIFIED) The final transparency of the balloon was adjusted to 0.2, making it semi-transparent.
+    local anim_in = game:GetService("TweenService"):Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = pos_target, BackgroundTransparency = 0.2})
+    anim_in:Play()
+    
     table.insert(Tbl_ActiveNotifications, obj_frame)
+
+    -- Automatic disappearance
     task.delay(var_duration, function()
         if obj_frame and obj_frame.Parent then
             for i, v in ipairs(Tbl_ActiveNotifications) do if v == obj_frame then table.remove(Tbl_ActiveNotifications, i); break; end end
-            local anim_out = Srv_Tween:Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = obj_frame.Position + UDim2.fromOffset(0, 80), BackgroundTransparency = 1})
+            -- (MODIFIED) The exit animation now moves the notification to the right.
+            local anim_out = game:GetService("TweenService"):Create(obj_frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {Position = obj_frame.Position + UDim2.fromOffset(Cfg_NotificationSize.X + Cfg_ScreenMargin.X, 0), BackgroundTransparency = 1})
             anim_out:Play()
             Func_UpdatePositions()
             anim_out.Completed:Wait()
@@ -82,14 +103,27 @@ function Func_Notify(p_title, p_subtitle, p_duration)
         end
     end)
 end
+-- [END] CUSTOM NOTIFICATION SYSTEM
+--================================================================================--
 
-local ID_SoundSuccess = "3625290171"
-local ID_SoundError = "2865228021"
+
+--================================================================================--
+-- SERVICES AND CONFIGURATIONS
+--================================================================================--
+local Srv_Debris = game:GetService("Debris") 
+local Srv_Marketplace = game:GetService("MarketplaceService")
+local Var_LocalPlayer = Srv_Players.LocalPlayer
+
 local ID_BackgroundImage = "rbxassetid://124288667234232"
 local Cfg_ButtonColor = Color3.fromRGB(60, 60, 60)
+local ID_SoundSuccess = "3625290171" 
+local ID_SoundError = "2865228021" 
 local Name_PredictableSound = "PainelMusica_UserId_" .. Var_LocalPlayer.UserId
 local Name_CurrentSound = nil
 
+--================================================================================--
+-- HELPER AND MAIN FUNCTIONS
+--================================================================================--
 local function Util_FindRemoteEvent(p_name)
     for _, service in ipairs({game:GetService("ReplicatedStorage"), game:GetService("Workspace")}) do
         for _, obj in ipairs(service:GetDescendants()) do
@@ -105,7 +139,7 @@ local function Util_PlaySound(p_soundId)
             local sound_obj = Instance.new("Sound")
             sound_obj.Name = "NotificationSound"
             sound_obj.SoundId = "rbxassetid://" .. p_soundId
-            sound_obj.Volume = 0.7
+            sound_obj.Volume = 0.7 
             sound_obj.Parent = Var_PlayerGui
             sound_obj:Play()
             Srv_Debris:AddItem(sound_obj, sound_obj.TimeLength + 1)
@@ -133,7 +167,7 @@ local function Core_StopAllMusic()
     for _, sound in ipairs(workspace:GetDescendants()) do
         if sound:IsA("Sound") and sound.IsPlaying then
             remote:FireServer("stopSound", sound.Name)
-            wasStopped = true
+            wasStopped = true 
         end
     end
     if wasStopped then Func_Notify("Music", "Stopped.", 3) end
@@ -148,6 +182,9 @@ local function Core_AdoptOrphanedSound()
     end
 end
 
+--================================================================================--
+-- INITIAL CHECK AND EXECUTION
+--================================================================================--
 if not Util_FindRemoteEvent("AC6_FE_Sounds") then
     Util_PlaySound(ID_SoundError)
     Func_Notify("Error", "Game not compatible.", 5)
@@ -158,6 +195,9 @@ Util_PlaySound(ID_SoundSuccess)
 Func_Notify("System", "Music Panel Loaded!", 5)
 Core_AdoptOrphanedSound()
 
+--================================================================================--
+-- GRAPHICAL USER INTERFACE (GUI) CREATION
+--================================================================================--
 local GUI_Main = Instance.new("ScreenGui", Var_PlayerGui)
 GUI_Main.Name = "PainelMusicaGui"
 GUI_Main.ResetOnSpawn = false
@@ -202,8 +242,14 @@ Util_Create("TextLabel", {Parent = Frame_Help, Name = "HelpTitle", Size = UDim2.
 local Elem_Scrolling = Util_Create("ScrollingFrame", {Parent = Frame_Help, Name = "ScrollingContent", Size = UDim2.new(1, 0, 1, -75), Position = UDim2.new(0, 0, 0, 35), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarImageColor3 = Color3.fromRGB(150, 150, 150), ScrollBarThickness = 6, ZIndex = 11})
 Util_Create("TextLabel", {Parent = Elem_Scrolling, Name = "HelpText", Size = UDim2.new(1, -10, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Font = Enum.Font.Gotham, TextSize = 14, TextColor3 = Color3.fromRGB(240, 240, 240), Text = "🎵 Script Description:\n\nThis script adds a simple and functional music panel to your game, allowing the player to play music using a Roblox audio ID (AssetId).\n\n--- ✅ Compatibility: ---\n\nWorks best in car games.\n\nCompatible with games that have the \"AC6_FE_Sounds\" RemoteEvent inside ReplicatedStorage.\n\nThis event is common in games with custom sound systems from the AC6 community.\n\n\n--- ⚙️ How to use: ---\n\n1. Enter the Roblox music ID (AssetId).\n\n\n2. Adjust the following parameters:\n\n   Volume: from 0.1 to 10 (e.g., 1 = normal volume).\n\n   Pitch: from 0.5 to 2 (e.g., 1 = normal pitch, 1.2 = higher, 0.8 = lower).\n\n\n3. Press the \"Play\" button to start the music.\n\n\n4. Press \"Stop\" to stop the current music.\n\n\n--- 🔒 Security and Verification:\n\nThe script automatically checks if the game has the \"AC6_FE_Sounds\" event before activating the panel.\n\nEnsures that only one song plays at a time, preventing overlaps.\n\nShows notifications in case of an error or if the game is not compatible.", TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true, ZIndex = 12})
 local Btn_CloseHelp = Util_CreateStyled("TextButton", {Parent = Frame_Help, Name = "CloseHelpButton", Text = "CLOSE", Size = UDim2.new(0.9, 0, 0, 30), Position = UDim2.new(0.05, 0, 1, -40), BackgroundColor3 = Cfg_ButtonColor, TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 14, ZIndex = 11})
-local Btn_Toggle = Util_CreateStyled("TextButton", {Parent = GUI_Main, Name = "ToggleButton", Text = "🎵", Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(1, -60, 0.5, 0), AnchorPoint = Vector2.new(1, 0.5), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 24, ZIndex = 5, Active = true, Draggable = true})
 
+-- ====================================[ MODIFICATION MADE HERE ]====================================
+local Btn_Toggle = Util_CreateStyled("TextButton", {Parent = GUI_Main, Name = "ToggleButton", Text = "🎵", Size = UDim2.new(0, 50, 0, 50), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Color3.fromRGB(35, 35, 35), TextColor3 = Color3.new(1, 1, 1), Font = Enum.Font.GothamBold, TextSize = 24, ZIndex = 5, Active = true, Draggable = true})
+-- ====================================================================================================
+
+--================================================================================--
+-- BUTTON LOGIC
+--================================================================================--
 Btn_Play.MouseButton1Click:Connect(function()
     local var_musicId = Input_MusicID.Text
     local var_volume = tonumber(Input_Volume.Text) or 1
